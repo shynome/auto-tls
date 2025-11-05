@@ -61,16 +61,16 @@ func bindTLS(se *core.ServeEvent) error {
 		magic := magicGen("", nil)
 		ctx := r.Context()
 		var cert *tls.Certificate
-		if d := r.FormValue("server_name"); false && d != "" { //下面的代码会报错, 直接设置为 false 跳过
-			hello := &tls.ClientHelloInfo{ServerName: d}
-			suitesStr, schemesStr := r.FormValue("cipher_suites"), r.FormValue("signature_schemes")
-			hello.CipherSuites = try.To1(parseUint16Str[uint16](suitesStr))
-			hello.SignatureSchemes = try.To1(parseUint16Str[tls.SignatureScheme](schemesStr))
-			cert = try.To1(magic.GetCertificate(hello))
-		} else {
-			cc := try.To1(magic.CacheManagedCertificate(ctx, domain)) // 证书不存在时抛出的文件不存在错误会直接被转换成404错误, 不用另外处理了
-			cert = &cc.Certificate
-		}
+		// if d := r.FormValue("server_name"); d != "" { //下面的代码会报错, 直接设置为 false 跳过
+		// 	hello := &tls.ClientHelloInfo{ServerName: d}
+		// 	suitesStr, schemesStr := r.FormValue("cipher_suites"), r.FormValue("signature_schemes")
+		// 	hello.CipherSuites = try.To1(parseUint16Str[uint16](suitesStr))
+		// 	hello.SignatureSchemes = try.To1(parseUint16Str[tls.SignatureScheme](schemesStr))
+		// 	cert = try.To1(magic.GetCertificate(hello))
+		// } else {
+		cc := try.To1(magic.CacheManagedCertificate(ctx, domain)) // 证书不存在时抛出的文件不存在错误会直接被转换成404错误, 不用另外处理了
+		cert = &cc.Certificate
+		// }
 
 		body := &bytes.Buffer{}
 		for _, der := range cert.Certificate {
