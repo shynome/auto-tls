@@ -28,9 +28,10 @@ import (
 func bindTLS(se *core.ServeEvent) error {
 	app := se.App
 
+	g := certmagic.NewDefault()
 	cache := certmagic.NewCache(certmagic.CacheOptions{
 		GetConfigForCert: func(certmagic.Certificate) (*certmagic.Config, error) {
-			return certmagic.NewDefault(), nil
+			return g, nil
 		},
 	})
 	storage := &certmagic.FileStorage{Path: filepath.Join(app.DataDir(), "certmagic")}
