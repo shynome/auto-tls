@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
@@ -13,6 +14,8 @@ import (
 	"mime"
 	"net/http"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/caddyserver/certmagic"
 	"github.com/libdns/cloudflare"
@@ -57,10 +60,20 @@ func bindTLS(se *core.ServeEvent) error {
 		domain := record.GetString("domain")
 		magic := magicGen("", nil)
 		ctx := r.Context()
-		cert := try.To1(magic.CacheManagedCertificate(ctx, domain)) // 证书不存在时抛出的文件不存在错误会直接被转换成404错误, 不用另外处理了
+		var cert *tls.Certificate
+		if d := r.FormValue("server_name"); false && d != "" { //下面的代码会报错, 直接设置为 false 跳过
+			hello := &tls.ClientHelloInfo{ServerName: d}
+			suitesStr, schemesStr := r.FormValue("cipher_suites"), r.FormValue("signature_schemes")
+			hello.CipherSuites = try.To1(parseUint16Str[uint16](suitesStr))
+			hello.SignatureSchemes = try.To1(parseUint16Str[tls.SignatureScheme](schemesStr))
+			cert = try.To1(magic.GetCertificate(hello))
+		} else {
+			cc := try.To1(magic.CacheManagedCertificate(ctx, domain)) // 证书不存在时抛出的文件不存在错误会直接被转换成404错误, 不用另外处理了
+			cert = &cc.Certificate
+		}
 
 		body := &bytes.Buffer{}
-		for _, der := range cert.Certificate.Certificate {
+		for _, der := range cert.Certificate {
 			block := &pem.Block{Type: "CERTIFICATE", Bytes: der}
 			try.To(pem.Encode(body, block))
 		}
@@ -88,6 +101,19 @@ func bindTLS(se *core.ServeEvent) error {
 	})
 
 	return se.Next()
+}
+
+func parseUint16Str[T ~uint16](s string) ([]T, error) {
+	ss := strings.Split(s, ",")
+	uu := make([]T, len(ss))
+	for i, s := range ss {
+		u, err := strconv.ParseUint(s, 16, 16)
+		if err != nil {
+			return nil, err
+		}
+		uu[i] = T(u)
+	}
+	return uu, nil
 }
 
 func ManageAsync(app core.App, genMagic MagicGen) (err error) {
