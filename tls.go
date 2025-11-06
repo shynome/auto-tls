@@ -30,11 +30,14 @@ func bindTLS(se *core.ServeEvent) error {
 
 	storage := &certmagic.FileStorage{Path: filepath.Join(app.DataDir(), "certmagic")}
 	cfg := certmagic.Config{Storage: storage}
+	var baseMagic *certmagic.Config
 	cache := certmagic.NewCache(certmagic.CacheOptions{
 		GetConfigForCert: func(certmagic.Certificate) (*certmagic.Config, error) {
-			return &cfg, nil
+			return baseMagic, nil
 		},
+		// RenewCheckInterval: 30 * time.Second,
 	})
+	baseMagic = certmagic.New(cache, cfg)
 	magicGen := GenMagic(app, cache, cfg)
 	// 每天执行一次续期任务
 	app.Cron().MustAdd("certmagic", "0 0 * * *", func() {
