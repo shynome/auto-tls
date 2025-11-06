@@ -48,3 +48,4 @@ local.tls-share-test.shynome.com {
     - [x] DCDN
     - [ ] ESA (300 元)
   - [ ] 腾讯云 (2_000 元)
+- [ ] 部署任务失败时发送邮件通知
