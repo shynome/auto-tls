@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/caddyserver/certmagic"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/tools/types"
@@ -84,7 +85,8 @@ func genAliyunDeployTask(app core.App, deploy *core.Record) (err error) {
 	}
 
 	products := deploy.GetStringSlice("products")
-	suffix := strings.Replace(domain.GetString("domain"), "*.", "", 1)
+	wildcard := domain.GetString("domain")
+	suffix := strings.Replace(wildcard, "*.", "", 1)
 
 	tasks := try.To1(app.FindCollectionByNameOrId(db.TableTasks))
 	taskList := []*core.Record{}
@@ -96,6 +98,9 @@ func genAliyunDeployTask(app core.App, deploy *core.Record) (err error) {
 			items := try.To1(cdn.List(suffix))
 			for _, item := range items {
 				if item.SslProtocol != "on" {
+					continue
+				}
+				if !certmagic.MatchWildcard(item.DomainName, wildcard) {
 					continue
 				}
 				payload := AliyunTaskPayload{
@@ -116,6 +121,9 @@ func genAliyunDeployTask(app core.App, deploy *core.Record) (err error) {
 			items := try.To1(dcdn.List(suffix))
 			for _, item := range items {
 				if item.SSLProtocol != "on" {
+					continue
+				}
+				if !certmagic.MatchWildcard(item.DomainName, wildcard) {
 					continue
 				}
 				payload := AliyunTaskPayload{
