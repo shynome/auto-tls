@@ -23,6 +23,7 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/types"
 	"github.com/shynome/auto-tls/db"
 	"github.com/shynome/err0"
 	"github.com/shynome/err0/try"
@@ -57,6 +58,13 @@ func bindTLS(se *core.ServeEvent) error {
 		rtoken := r.FormValue("token")
 		if token != rtoken {
 			return apis.NewUnauthorizedError("认证失败", nil)
+		}
+		expired := record.GetDateTime("expired").Time()
+		if expired.IsZero() {
+			return apis.NewNotFoundError("证书尚未准备好", nil)
+		}
+		if time.Now().After(expired) {
+			return apis.NewNotFoundError("证书已过期", nil)
 		}
 		domain := record.GetString("domain")
 		magic := magicGen("", nil)
@@ -133,6 +141,22 @@ func ManageAsync(app core.App, genMagic MagicGen) (err error) {
 			ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 			defer cancel()
 			err = magic.ManageSync(ctx, []string{d})
+
+			ctx2 := context.Background()
+			c := try.To1(magic.CacheManagedCertificate(ctx2, d))
+			if c.Leaf != nil {
+				expired := try.To1(types.ParseDateTime(c.Leaf.NotAfter))
+				err := app.RunInTransaction(func(tx core.App) error {
+					domain, err := tx.FindRecordById(db.TableDomains, domain.Id)
+					if err != nil {
+						return err
+					}
+					domain.Set("expired", expired)
+					return tx.Save(domain)
+				})
+				try.To(err)
+			}
+
 			return err
 		})
 	}
