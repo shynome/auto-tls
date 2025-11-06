@@ -9,5 +9,6 @@ import (
 func main() {
 	app := pocketbase.New()
 	app.OnServe().BindFunc(bindTLS)
+	app.OnServe().BindFunc(bindDeploy)
 	try.To(app.Start())
 }
