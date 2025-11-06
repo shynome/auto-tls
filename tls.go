@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"mime"
 	"net/http"
 	"path/filepath"
@@ -64,27 +65,35 @@ func bindTLS(se *core.ServeEvent) error {
 		if time.Now().After(expired) {
 			return apis.NewNotFoundError("证书已过期", nil)
 		}
-		domain := record.GetString("domain")
 
-		f := filepath.Join(record.BaseFilesPath(), record.GetString("pem"))
-		fs := try.To1(e.App.NewFilesystem())
-		defer fs.Close()
+		pem, fn := getPEMTry(e.App, record)
 
-		attrs := try.To1(fs.Attributes(f))
-		fn := attrs.Metadata["original-filename"]
-		if fn == "" {
-			fn = domain + ".pem"
-		}
 		disposition := mime.FormatMediaType("inline", map[string]string{"filename": fn})
 		h := e.Response.Header()
 		h.Set("Content-Disposition", disposition)
 
-		pem := try.To1(fs.GetReader(f))
-		defer pem.Close()
-		return e.Stream(http.StatusOK, "text/plain", pem)
+		return e.Blob(http.StatusOK, "text/plain", pem)
 	})
 
 	return se.Next()
+}
+
+func getPEMTry(app core.App, record *core.Record) (pem []byte, fn string) {
+	domain := record.GetString("domain")
+	f := filepath.Join(record.BaseFilesPath(), record.GetString("pem"))
+	fs := try.To1(app.NewFilesystem())
+	defer fs.Close()
+
+	attrs := try.To1(fs.Attributes(f))
+	fn = attrs.Metadata["original-filename"]
+	if fn == "" {
+		fn = domain + ".pem"
+	}
+
+	r := try.To1(fs.GetReader(f))
+	defer r.Close()
+	pem = try.To1(io.ReadAll(r))
+	return pem, fn
 }
 
 func parseUint16Str[T ~uint16](s string) ([]T, error) {
