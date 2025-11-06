@@ -23,6 +23,9 @@ func bindDeploy(se *core.ServeEvent) error {
 		return e.Next()
 	})
 	se.App.Cron().Add("deploy", "0 1 * * *", func() {
+		if !se.App.Settings().Meta.HideControls {
+			return
+		}
 		genDeployTask(se.App)
 	})
 	return se.Next()
