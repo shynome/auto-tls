@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/caddyserver/certmagic"
 	"github.com/libdns/cloudflare"
@@ -31,14 +32,14 @@ import (
 func bindTLS(se *core.ServeEvent) error {
 	app := se.App
 
-	g := certmagic.NewDefault()
+	storage := &certmagic.FileStorage{Path: filepath.Join(app.DataDir(), "certmagic")}
+	cfg := certmagic.Config{Storage: storage}
 	cache := certmagic.NewCache(certmagic.CacheOptions{
 		GetConfigForCert: func(certmagic.Certificate) (*certmagic.Config, error) {
-			return g, nil
+			return &cfg, nil
 		},
 	})
-	storage := &certmagic.FileStorage{Path: filepath.Join(app.DataDir(), "certmagic")}
-	magicGen := GenMagic(app, cache, storage)
+	magicGen := GenMagic(app, cache, cfg)
 	// 每天执行一次续期任务
 	app.Cron().MustAdd("certmagic", "0 0 * * *", func() {
 		ManageAsync(app, magicGen)
@@ -125,25 +126,12 @@ func ManageAsync(app core.App, genMagic MagicGen) (err error) {
 				logger.Error("issue cert failed", "error", err)
 			})
 
-			acme := try.To1(app.FindRecordById(db.TableACMEs, domain.GetString("acme")))
-			email := acme.GetString("email")
-
-			dnsp := try.To1(app.FindRecordById(db.TableDNSP, domain.GetString("dns_provider")))
-			p := dnsp.GetString("provider")
-			var provider certmagic.DNSProvider
-			switch p {
-			case db.DNSPCloudflare:
-				v := dnsp.GetString("value")
-				var p cloudflare.Provider
-				json.Unmarshal([]byte(v), &p)
-				provider = &p
-			default:
-				return fmt.Errorf("unsupported dns provider: %s", p)
-			}
-
-			magic := genMagic(email, provider)
+			domain := MagicDomain(domain)
+			magic := try.To1(domain.Magic(app, genMagic))
 			d := domain.GetString("domain")
 			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+			defer cancel()
 			err = magic.ManageSync(ctx, []string{d})
 			return err
 		})
@@ -153,10 +141,43 @@ func ManageAsync(app core.App, genMagic MagicGen) (err error) {
 	return nil
 }
 
+type Domain struct {
+	core.BaseRecordProxy
+}
+
+func MagicDomain(r *core.Record) *Domain {
+	d := &Domain{}
+	d.SetProxyRecord(r)
+	return d
+}
+
+func (domain *Domain) Magic(app core.App, genMagic MagicGen) (_ *certmagic.Config, err error) {
+	defer err0.Then(&err, nil, nil)
+
+	acme := try.To1(app.FindRecordById(db.TableACMEs, domain.GetString("acme")))
+	email := acme.GetString("email")
+
+	dnsp := try.To1(app.FindRecordById(db.TableDNSP, domain.GetString("dns_provider")))
+	p := dnsp.GetString("provider")
+	var provider certmagic.DNSProvider
+	switch p {
+	case db.DNSPCloudflare:
+		v := dnsp.GetString("value")
+		var p cloudflare.Provider
+		json.Unmarshal([]byte(v), &p)
+		provider = &p
+	default:
+		return nil, fmt.Errorf("unsupported dns provider: %s", p)
+	}
+
+	magic := genMagic(email, provider)
+
+	return magic, nil
+}
+
 type MagicGen func(email string, provider certmagic.DNSProvider) *certmagic.Config
 
-func GenMagic(app core.App, cache *certmagic.Cache, storage *certmagic.FileStorage) MagicGen {
-	cfg := certmagic.Config{Storage: storage}
+func GenMagic(app core.App, cache *certmagic.Cache, cfg certmagic.Config) MagicGen {
 	return func(email string, provider certmagic.DNSProvider) *certmagic.Config {
 		magic := certmagic.New(cache, cfg)
 		issuer := certmagic.NewACMEIssuer(magic, certmagic.ACMEIssuer{
