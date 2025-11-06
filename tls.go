@@ -1,15 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"crypto/ecdsa"
-	"crypto/ed25519"
-	"crypto/rsa"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"mime"
 	"net/http"
@@ -23,8 +16,10 @@ import (
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/filesystem"
 	"github.com/pocketbase/pocketbase/tools/types"
 	"github.com/shynome/auto-tls/db"
+	"github.com/shynome/auto-tls/tools"
 	"github.com/shynome/err0"
 	"github.com/shynome/err0/try"
 	"golang.org/x/sync/errgroup"
@@ -67,38 +62,23 @@ func bindTLS(se *core.ServeEvent) error {
 			return apis.NewNotFoundError("证书已过期", nil)
 		}
 		domain := record.GetString("domain")
-		magic := magicGen("", nil)
-		ctx := r.Context()
 
-		cc := try.To1(magic.CacheManagedCertificate(ctx, domain)) // 证书不存在时抛出的文件不存在错误会直接被转换成404错误, 不用另外处理了
-		var cert tls.Certificate = cc.Certificate
+		f := filepath.Join(record.BaseFilesPath(), record.GetString("pem"))
+		fs := try.To1(e.App.NewFilesystem())
+		defer fs.Close()
 
-		body := &bytes.Buffer{}
-		for _, der := range cert.Certificate {
-			block := &pem.Block{Type: "CERTIFICATE", Bytes: der}
-			try.To(pem.Encode(body, block))
+		attrs := try.To1(fs.Attributes(f))
+		fn := attrs.Metadata["original-filename"]
+		if fn == "" {
+			fn = domain + ".pem"
 		}
-		switch key := cert.PrivateKey.(type) {
-		case *rsa.PrivateKey:
-			der := x509.MarshalPKCS1PrivateKey(key)
-			block := &pem.Block{Type: "RSA PRIVATE KEY", Bytes: der}
-			try.To(pem.Encode(body, block))
-		case *ecdsa.PrivateKey:
-			der := try.To1(x509.MarshalECPrivateKey(key))
-			block := &pem.Block{Type: "EC PRIVATE KEY", Bytes: der}
-			try.To(pem.Encode(body, block))
-		case ed25519.PrivateKey:
-			der := try.To1(x509.MarshalPKCS8PrivateKey(key))
-			block := &pem.Block{Type: "PRIVATE KEY", Bytes: der}
-			try.To(pem.Encode(body, block))
-		default:
-			return apis.NewInternalServerError("尚未支持的私钥类型", nil)
-		}
-
-		disposition := mime.FormatMediaType("inline", map[string]string{"filename": domain + ".pem"})
+		disposition := mime.FormatMediaType("inline", map[string]string{"filename": fn})
 		h := e.Response.Header()
 		h.Set("Content-Disposition", disposition)
-		return e.Blob(http.StatusOK, "text/plain", body.Bytes())
+
+		pem := try.To1(fs.GetReader(f))
+		defer pem.Close()
+		return e.Stream(http.StatusOK, "text/plain", pem)
 	})
 
 	return se.Next()
@@ -141,23 +121,33 @@ func ManageAsync(app core.App, genMagic MagicGen) (err error) {
 			ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 			defer cancel()
 			err = magic.ManageSync(ctx, []string{d})
+			try.To(err)
 
 			ctx2 := context.Background()
 			c := try.To1(magic.CacheManagedCertificate(ctx2, d))
 			if c.Leaf != nil {
 				expired := try.To1(types.ParseDateTime(c.Leaf.NotAfter))
+				expiredR := domain.GetDateTime("expired")
+				if expired.Equal(expiredR) {
+					return // 相同的证书, 不用更新
+				}
+				pem := try.To1(tools.ToPEM(c.Certificate))
+				fn := fmt.Sprintf("%s-%s.pem", expired.Time().Format("2006-01-02"), d)
+				f := try.To1(filesystem.NewFileFromBytes(pem, fn))
 				err := app.RunInTransaction(func(tx core.App) error {
 					domain, err := tx.FindRecordById(db.TableDomains, domain.Id)
 					if err != nil {
 						return err
 					}
 					domain.Set("expired", expired)
-					return tx.Save(domain)
+					domain.Set("pem", f)
+					err = tx.Save(domain)
+					return err
 				})
 				try.To(err)
 			}
 
-			return err
+			return
 		})
 	}
 	try.To(eg.Wait())
