@@ -39,10 +39,9 @@ func bindTLS(se *core.ServeEvent) error {
 		},
 		RenewCheckInterval: neverRenewTime,
 	})
-	magicGen := GenMagic(app, cache, cfg)
 	// 每天执行一次续期任务
 	app.Cron().MustAdd("certmagic", "0 0 * * *", func() {
-		ManageAsync(app, magicGen)
+		ManageAsync(app, cache, cfg)
 	})
 
 	se.Router.GET("/api/cert/{id}", func(e *core.RequestEvent) (err error) {
@@ -109,7 +108,7 @@ func parseUint16Str[T ~uint16](s string) ([]T, error) {
 	return uu, nil
 }
 
-func ManageAsync(app core.App, genMagic MagicGen) (err error) {
+func ManageAsync(app core.App, cache *certmagic.Cache, cfg certmagic.Config) (err error) {
 	logger := app.Logger()
 	defer err0.Then(&err, nil, func() {
 		logger.Error("issue certs failed", "error", err)
@@ -127,7 +126,7 @@ func ManageAsync(app core.App, genMagic MagicGen) (err error) {
 			})
 
 			domain := MagicDomain(domain)
-			magic := try.To1(domain.Magic(app, genMagic))
+			magic := try.To1(domain.Magic(app, cache, cfg))
 			d := domain.GetString("domain")
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
@@ -177,11 +176,12 @@ func MagicDomain(r *core.Record) *Domain {
 	return d
 }
 
-func (domain *Domain) Magic(app core.App, genMagic MagicGen) (_ *certmagic.Config, err error) {
+func (domain *Domain) Magic(app core.App, cache *certmagic.Cache, cfg certmagic.Config) (_ *certmagic.Config, err error) {
 	defer err0.Then(&err, nil, nil)
 
 	acme := try.To1(app.FindRecordById(db.TableACMEs, domain.GetString("acme")))
 	email := acme.GetString("email")
+	CA := db.MagicCA(acme.GetString("CA"))
 
 	dnsp := try.To1(app.FindRecordById(db.TableDNSP, domain.GetString("dns_provider")))
 	p := dnsp.GetString("provider")
@@ -196,27 +196,16 @@ func (domain *Domain) Magic(app core.App, genMagic MagicGen) (_ *certmagic.Confi
 		return nil, fmt.Errorf("unsupported dns provider: %s", p)
 	}
 
-	magic := genMagic(email, provider)
+	magic := certmagic.New(cache, cfg)
+	issuer := certmagic.NewACMEIssuer(magic, certmagic.ACMEIssuer{
+		CA:     CA,
+		Email:  email,
+		Agreed: true,
+		DNS01Solver: &certmagic.DNS01Solver{
+			DNSManager: certmagic.DNSManager{DNSProvider: provider},
+		},
+	})
+	magic.Issuers = []certmagic.Issuer{issuer}
 
 	return magic, nil
-}
-
-type MagicGen func(email string, provider certmagic.DNSProvider) *certmagic.Config
-
-func GenMagic(app core.App, cache *certmagic.Cache, cfg certmagic.Config) MagicGen {
-	return func(email string, provider certmagic.DNSProvider) *certmagic.Config {
-		magic := certmagic.New(cache, cfg)
-		issuer := certmagic.NewACMEIssuer(magic, certmagic.ACMEIssuer{
-			Email:  email,
-			Agreed: true,
-			DNS01Solver: &certmagic.DNS01Solver{
-				DNSManager: certmagic.DNSManager{DNSProvider: provider},
-			},
-		})
-		if app.IsDev() {
-			issuer.CA = certmagic.LetsEncryptStagingCA
-		}
-		magic.Issuers = []certmagic.Issuer{issuer}
-		return magic
-	}
 }
