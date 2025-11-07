@@ -109,7 +109,11 @@ func ManageAsync(app core.App, cfg certmagic.Config) (err error) {
 		logger.Error("issue certs failed", "error", err)
 	})
 
-	q := dbx.Not(dbx.HashExp{"dns_provider": ""})
+	d30, _ := types.ParseDateTime(time.Now().Add(30 * 24 * time.Hour))
+	q := dbx.And(
+		dbx.Not(dbx.HashExp{"dns_provider": ""}),
+		dbx.NewExp("expired < {:d30}", dbx.Params{"d30": d30}),
+	)
 	domains := try.To1(app.FindAllRecords(db.TableDomains, q))
 
 	var eg errgroup.Group
