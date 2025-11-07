@@ -34,15 +34,9 @@ func bindTLS(se *core.ServeEvent) error {
 
 	storage := &certmagic.FileStorage{Path: filepath.Join(app.DataDir(), "certmagic")}
 	cfg := certmagic.Config{Storage: storage}
-	cache := certmagic.NewCache(certmagic.CacheOptions{
-		GetConfigForCert: func(cert certmagic.Certificate) (*certmagic.Config, error) {
-			return nil, nil // 不需要 cache 进行 renew, 每天的定时任务会进行 renew
-		},
-		RenewCheckInterval: neverRenewTime,
-	})
 	// 每天执行一次续期任务
 	app.Cron().MustAdd("certmagic", "0 0 * * *", func() {
-		ManageAsync(app, cache, cfg)
+		ManageAsync(app, cfg)
 	})
 
 	se.Router.GET("/api/cert/{id}", func(e *core.RequestEvent) (err error) {
@@ -109,7 +103,7 @@ func parseUint16Str[T ~uint16](s string) ([]T, error) {
 	return uu, nil
 }
 
-func ManageAsync(app core.App, cache *certmagic.Cache, cfg certmagic.Config) (err error) {
+func ManageAsync(app core.App, cfg certmagic.Config) (err error) {
 	logger := app.Logger()
 	defer err0.Then(&err, nil, func() {
 		logger.Error("issue certs failed", "error", err)
@@ -127,6 +121,12 @@ func ManageAsync(app core.App, cache *certmagic.Cache, cfg certmagic.Config) (er
 			})
 
 			domain := MagicDomain(domain)
+			cache := certmagic.NewCache(certmagic.CacheOptions{
+				// 不需要 cache 进行 renew, 每天的定时任务会进行 renew
+				GetConfigForCert:   func(cert certmagic.Certificate) (*certmagic.Config, error) { return nil, nil },
+				RenewCheckInterval: neverRenewTime,
+			})
+			defer cache.Stop()
 			magic := try.To1(domain.Magic(app, cache, cfg))
 			d := domain.GetString("domain")
 			ctx := context.Background()
