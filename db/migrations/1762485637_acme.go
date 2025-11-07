@@ -25,7 +25,7 @@ func init() {
 			db.CALetsEncryptStaging,
 			db.CAGoogleTrustStaging,
 		}
-		acmes.Fields.AddAt(0,
+		acmes.Fields.AddAt(getFieldNext(acmes, "id"),
 			&core.SelectField{
 				Name: "CA", Id: ID("CA"), System: true,
 				Required: true, Presentable: true,
