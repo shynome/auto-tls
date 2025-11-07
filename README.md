@@ -1,8 +1,26 @@
 # 证书申请与部署工具
 
+项目前身 [shynome/tls-deploy](https://github.com/shynome/tls-deploy), 后面又因为证书时长要缩短到1年以下, 
+买证书也没有什么意义了, 还是上自动化工具吧, 于是做了这个集中管理证书并部署的工具
+
 # 如何使用
 
-等我录个视频教程吧
+```sh
+# 创建数据存储目录
+mkdir auto-tls
+# 运行服务
+docker run -d --restart always --name auto-tls -p 9443:9443 -v $PWD/auto-tls/:/app/pb_data/ shynome/auto-tls:v0.0.2
+# 创建管理员帐号
+docker exec auto-tls ./auto-tls superuser create admin@tls.local 12345678
+```
+
+打开浏览器管理页面: <http://127.0.0.1:9443/_/> , 接着使用上方创建的管理员帐号登录
+
+接下来就参考下面一分钟的视频展示了(视频中出现的认证凭据均已删除)
+
+https://github.com/user-attachments/assets/39f64d61-317c-4388-8414-9b7ec849505b
+
+
 
 # 部署目标
 
