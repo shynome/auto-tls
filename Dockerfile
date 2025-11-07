@@ -6,5 +6,5 @@ EXPOSE 9443
 
 COPY auto-tls /app/auto-tls
 # start PocketBase
-ENTRYPOINT [ "/app/bilive-auth", "serve", "--http=0.0.0.0:9443" ]
+ENTRYPOINT [ "/app/auto-tls", "serve", "--http=0.0.0.0:9443" ]
 CMD []
