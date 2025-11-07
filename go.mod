@@ -6,6 +6,7 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.63.107
 	github.com/caddyserver/certmagic v0.25.0
 	github.com/libdns/cloudflare v0.2.2
+	github.com/mholt/acmez/v3 v3.1.3
 	github.com/pocketbase/dbx v1.11.0
 	github.com/pocketbase/pocketbase v0.31.0
 	github.com/shynome/err0 v0.2.1
@@ -31,7 +32,6 @@ require (
 	github.com/libdns/libdns v1.1.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mholt/acmez/v3 v3.1.3 // indirect
 	github.com/miekg/dns v1.1.68 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
