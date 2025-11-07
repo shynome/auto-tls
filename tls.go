@@ -14,6 +14,7 @@ import (
 
 	"github.com/caddyserver/certmagic"
 	"github.com/libdns/cloudflare"
+	acmez "github.com/mholt/acmez/v3/acme"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -196,6 +197,12 @@ func (domain *Domain) Magic(app core.App, cache *certmagic.Cache, cfg certmagic.
 		return nil, fmt.Errorf("unsupported dns provider: %s", p)
 	}
 
+	var eab *acmez.EAB
+	if v := acme.GetString("EAB"); v != "" {
+		eab = &acmez.EAB{}
+		try.To(json.Unmarshal([]byte(v), &eab))
+	}
+
 	magic := certmagic.New(cache, cfg)
 	issuer := certmagic.NewACMEIssuer(magic, certmagic.ACMEIssuer{
 		CA:     CA,
@@ -204,6 +211,7 @@ func (domain *Domain) Magic(app core.App, cache *certmagic.Cache, cfg certmagic.
 		DNS01Solver: &certmagic.DNS01Solver{
 			DNSManager: certmagic.DNSManager{DNSProvider: provider},
 		},
+		ExternalAccount: eab,
 	})
 	magic.Issuers = []certmagic.Issuer{issuer}
 
