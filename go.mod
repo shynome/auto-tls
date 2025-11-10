@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.63.107
 	github.com/caddyserver/certmagic v0.25.0
+	github.com/libdns/alidns v1.0.4
 	github.com/libdns/cloudflare v0.2.2
 	github.com/mholt/acmez/v3 v3.1.3
 	github.com/pocketbase/dbx v1.11.0

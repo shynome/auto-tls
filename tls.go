@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/caddyserver/certmagic"
+	"github.com/libdns/alidns"
 	"github.com/libdns/cloudflare"
 	acmez "github.com/mholt/acmez/v3/acme"
 	"github.com/pocketbase/dbx"
@@ -191,11 +192,15 @@ func (domain *Domain) Magic(app core.App, cache *certmagic.Cache, cfg certmagic.
 	dnsp := try.To1(app.FindRecordById(db.TableDNSP, domain.GetString("dns_provider")))
 	p := dnsp.GetString("provider")
 	var provider certmagic.DNSProvider
+	v := []byte(dnsp.GetString("value"))
 	switch p {
 	case db.DNSPCloudflare:
-		v := dnsp.GetString("value")
 		var p cloudflare.Provider
-		json.Unmarshal([]byte(v), &p)
+		try.To(json.Unmarshal(v, &p))
+		provider = &p
+	case db.DNSPAlidns:
+		var p alidns.Provider
+		try.To(json.Unmarshal(v, &p))
 		provider = &p
 	default:
 		return nil, fmt.Errorf("unsupported dns provider: %s", p)

@@ -1,6 +1,6 @@
 # 证书申请与部署工具
 
-项目前身 [shynome/tls-deploy](https://github.com/shynome/tls-deploy), 后面又因为证书时长要缩短到1年以下, 
+项目前身 [shynome/tls-deploy](https://github.com/shynome/tls-deploy), 后面又因为证书时长要缩短到 1 年以下,
 买证书也没有什么意义了, 还是上自动化工具吧, 于是做了这个集中管理证书并部署的工具
 
 # 如何使用
@@ -19,8 +19,6 @@ docker exec auto-tls ./auto-tls superuser create admin@tls.local 12345678
 接下来就参考下面一分钟的视频展示了(视频中出现的认证凭据均已删除)
 
 https://github.com/user-attachments/assets/39f64d61-317c-4388-8414-9b7ec849505b
-
-
 
 # 部署目标
 
@@ -59,7 +57,7 @@ local.tls-share-test.shynome.com {
 
 - [ ] 更多 dns_providers 的支持 (300 元)
   - [x] cloudflare
-  - [ ] 阿里云
+  - [x] 阿里云(alidns)
 - [ ] 更多部署目标支持
   - [ ] 阿里云
     - [x] CDN
