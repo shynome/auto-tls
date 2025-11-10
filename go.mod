@@ -2,6 +2,8 @@ module github.com/shynome/auto-tls
 
 go 1.25.0
 
+replace github.com/libdns/alidns => github.com/shynome/libdns-alidns v0.0.0-20251110072626-bcff4dd7e6e0
+
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.63.107
 	github.com/caddyserver/certmagic v0.25.0
