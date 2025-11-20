@@ -24,7 +24,7 @@ https://github.com/user-attachments/assets/39f64d61-317c-4388-8414-9b7ec849505b
 
 ## Caddy
 
-通过 [tls.get_certificate.http](https://caddyserver.com/docs/caddyfile/directives/tls#http-1) 获取证书
+通过 [tls.get_certificate.http](https://caddyserver.com/docs/caddyfile/directives/tls#http-1) 获取证书, [Caddy v2.5.0](https://github.com/caddyserver/caddy/pull/4541) 后支持
 
 ```txt
 local.tls-share-test.shynome.com {
