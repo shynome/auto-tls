@@ -55,6 +55,8 @@ local.tls-share-test.shynome.com {
 
 一些缺失的功能(我暂时用不上), 其实也是付费需求, 如果你公司(可开票)或个人有需求可向我支付对应的价格以便我进行开发, 邮箱: [shynome@remoon.cn](mailto:shynome@remoon.cn)
 
+
+- [ ] 部署目标的字段加上部署平台的前缀
 - [ ] 更多 dns_providers 的支持 (300 元)
   - [x] cloudflare
   - [x] 阿里云(alidns)
