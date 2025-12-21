@@ -6,9 +6,12 @@ const (
 	CALetsEncryptProduction = "LetsEncrypt"
 	CALetsEncryptStaging    = "LetsEncryptStaging"
 	CAZeroSSLProduction     = "ZeroSSL"
-	CATrustAsia             = "TrustAsia"
+	CALiteSSL               = "LiteSSL"
 	CAGoogleTrustProduction = "GoogleTrust"
 	CAGoogleTrustStaging    = "GoogleTrustStaging"
+
+	// Deprecated: 错误的使用 TrustAsia 作为品牌名, 更正为 LiteSSL
+	CATrustAsia = "TrustAsia"
 )
 
 type CA string
@@ -25,7 +28,7 @@ func MagicCA(c string) string {
 		return certmagic.GoogleTrustProductionCA
 	case CAGoogleTrustStaging:
 		return certmagic.GoogleTrustStagingCA
-	case CATrustAsia:
+	case CALiteSSL, CATrustAsia:
 		return "https://acme.litessl.com/acme/v2/directory"
 	}
 	return ""

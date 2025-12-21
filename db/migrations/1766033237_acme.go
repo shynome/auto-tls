@@ -18,9 +18,10 @@ func init() {
 		caList := acmes.Fields.GetByName("CA").(*core.SelectField)
 		vv := []string{}
 		for _, v := range caList.Values {
-			vv = append(vv, v)
-			if v == db.CAZeroSSLProduction {
-				vv = append(vv, db.CALiteSSL) // 放在 ZeroSSL 后面
+			if v == db.CATrustAsia {
+				vv = append(vv, db.CALiteSSL) // 替换 TrustAsia 为 LiteSSL, 证书颁发者和 ZeroSSL 同级, 所以应该用 LiteSSL
+			} else {
+				vv = append(vv, v)
 			}
 		}
 		caList.Values = vv
