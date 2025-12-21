@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.1] - 2025-12-21
+
+- 修正: 新 ACME CA 应当是 LiteSSL
+
 ## [0.2.0] - 2025-12-18
 
 - 添加: ACME CA TrustAsia 的支持

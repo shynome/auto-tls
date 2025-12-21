@@ -9,7 +9,7 @@
 # 创建数据存储目录
 mkdir auto-tls
 # 运行服务
-docker run -d --restart always --name auto-tls -p 9443:9443 -v $PWD/auto-tls/:/app/pb_data/ shynome/auto-tls:v0.2.0
+docker run -d --restart always --name auto-tls -p 9443:9443 -v $PWD/auto-tls/:/app/pb_data/ shynome/auto-tls:v0.2.1
 # 创建管理员帐号
 docker exec auto-tls ./auto-tls superuser create admin@tls.local 12345678
 ```
