@@ -100,7 +100,8 @@ func genAliyunDeployTask(app core.App, deploy *core.Record) (err error) {
 				if item.SslProtocol != "on" {
 					continue
 				}
-				if !certmagic.MatchWildcard(item.DomainName, wildcard) {
+				dm := NormalizeAliyunDomain(item.DomainName)
+				if !certmagic.MatchWildcard(dm, wildcard) {
 					continue
 				}
 				payload := AliyunTaskPayload{
@@ -123,7 +124,8 @@ func genAliyunDeployTask(app core.App, deploy *core.Record) (err error) {
 				if item.SSLProtocol != "on" {
 					continue
 				}
-				if !certmagic.MatchWildcard(item.DomainName, wildcard) {
+				dm := NormalizeAliyunDomain(item.DomainName)
+				if !certmagic.MatchWildcard(dm, wildcard) {
 					continue
 				}
 				payload := AliyunTaskPayload{
@@ -166,6 +168,13 @@ func genAliyunDeployTask(app core.App, deploy *core.Record) (err error) {
 	try.To(err)
 
 	return
+}
+
+func NormalizeAliyunDomain(domain string) string {
+	if !strings.HasPrefix(domain, ".") {
+		return domain
+	}
+	return "*" + domain
 }
 
 type AliyunTaskPayload struct {
