@@ -40,6 +40,9 @@ func bindTLS(se *core.ServeEvent) error {
 		ManageAsync(app, cfg)
 	})
 
+	se.Router.GET("/api/ask-cert/always-ok", func(e *core.RequestEvent) (err error) {
+		return e.NoContent(http.StatusNoContent)
+	})
 	se.Router.GET("/api/cert/{id}", func(e *core.RequestEvent) (err error) {
 		defer err0.Then(&err, nil, nil)
 		r := e.Request
