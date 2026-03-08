@@ -1,6 +1,8 @@
+VERSION := $(shell git describe --tags --always --dirty)
+
 build:
-	CGO_ENABLED=0 go build -ldflags="-X 'main.Version=$$(git describe --tags --always --dirty)' -s -w" -o auto-tls .
+	CGO_ENABLED=0 go build -ldflags="-X 'main.Version=${VERSION}' -s -w" -o auto-tls .
 docker: build
-	docker build . -t shynome/auto-tls:$$(git describe --tags --always --dirty)
+	docker build . -t shynome/auto-tls:${VERSION}
 push: docker
-	docker push shynome/auto-tls:$$(git describe --tags --always --dirty)
+	docker push shynome/auto-tls:${VERSION}
