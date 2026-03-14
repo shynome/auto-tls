@@ -30,6 +30,9 @@ func bindDeploy(se *core.ServeEvent) error {
 }
 
 func deploy(app core.App, task *core.Record) (err error) {
+	if !app.Settings().Meta.HideControls {
+		return
+	}
 	logger := app.Logger().With("task", task).With("started", time.Now())
 	defer err0.Then(&err, nil, func() {
 		logger.Error("执行部署任务失败", "error", err)
@@ -140,10 +143,6 @@ func genAliyunDeployTask(app core.App, deploy *core.Record) (err error) {
 				taskList = append(taskList, task)
 			}
 		}
-	}
-
-	if !app.Settings().Meta.HideControls {
-		return
 	}
 
 	err = app.RunInTransaction(func(tx core.App) error {
