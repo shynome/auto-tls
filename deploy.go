@@ -24,9 +24,6 @@ func bindDeploy(se *core.ServeEvent) error {
 		return e.Next()
 	})
 	se.App.Cron().Add("deploy", "0 1 * * *", func() {
-		if !se.App.Settings().Meta.HideControls {
-			return
-		}
 		genDeployTask(se.App)
 	})
 	return se.Next()
@@ -142,6 +139,10 @@ func genAliyunDeployTask(app core.App, deploy *core.Record) (err error) {
 				taskList = append(taskList, task)
 			}
 		}
+	}
+
+	if !app.Settings().Meta.HideControls {
+		return
 	}
 
 	err = app.RunInTransaction(func(tx core.App) error {
