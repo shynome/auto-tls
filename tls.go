@@ -152,7 +152,8 @@ func ManageAsync(app core.App, cfg certmagic.Config) (err error) {
 					return // 相同的证书, 不用更新
 				}
 				pem := try.To1(tools.ToPEM(c.Certificate))
-				fn := fmt.Sprintf("%s-%s.pem", expired.Time().Format("2006-01-02"), d)
+				domain.Set("expired", expired)
+				fn := pemFilename(domain.Record)
 				f := try.To1(filesystem.NewFileFromBytes(pem, fn))
 				err := app.RunInTransaction(func(tx core.App) error {
 					domain, err := tx.FindRecordById(db.TableDomains, domain.Id)
@@ -173,6 +174,12 @@ func ManageAsync(app core.App, cfg certmagic.Config) (err error) {
 	try.To(eg.Wait())
 
 	return nil
+}
+
+func pemFilename(r *core.Record) string {
+	t := r.GetDateTime("expired").Time()
+	d := r.GetString("domain")
+	return fmt.Sprintf("%s-%s.pem", t.Format("2006-01-02"), d)
 }
 
 type Domain struct {

@@ -68,7 +68,8 @@ func genAliyunDeployTask(app core.App, deploy *core.Record) (err error) {
 	config := try.To1(getAliyunConfig([]byte(value)))
 
 	domain := try.To1(app.FindRecordById(db.TableDomains, deploy.GetString("domain")))
-	pem, fn := getPEMTry(app, domain)
+	pem, _ := getPEMTry(app, domain)
+	fn := pemFilename(domain)
 	fn = strings.ReplaceAll(fn, "*.", "wildcard_.")
 
 	cas := aliyun.NewCas(config)
