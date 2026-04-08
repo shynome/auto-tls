@@ -13,5 +13,6 @@ func main() {
 	app.RootCmd.Version = Version
 	app.OnServe().BindFunc(bindTLS)
 	app.OnServe().BindFunc(bindDeploy)
+	app.OnServe().BindFunc(bindDDNS)
 	try.To(app.Start())
 }

@@ -6,4 +6,5 @@ const (
 	TableDomains = "domains"
 	TableDeploys = "deploys"
 	TableTasks   = "tasks"
+	TableDDNS    = "ddns"
 )

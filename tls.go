@@ -199,22 +199,7 @@ func (domain *Domain) Magic(app core.App, cache *certmagic.Cache, cfg certmagic.
 	email := acme.GetString("email")
 	CA := db.MagicCA(acme.GetString("CA"))
 
-	dnsp := try.To1(app.FindRecordById(db.TableDNSP, domain.GetString("dns_provider")))
-	p := dnsp.GetString("provider")
-	var provider certmagic.DNSProvider
-	v := []byte(dnsp.GetString("value"))
-	switch p {
-	case db.DNSPCloudflare:
-		var p cloudflare.Provider
-		try.To(json.Unmarshal(v, &p))
-		provider = &p
-	case db.DNSPAlidns:
-		var p alidns.Provider
-		try.To(json.Unmarshal(v, &p))
-		provider = &p
-	default:
-		return nil, fmt.Errorf("unsupported dns provider: %s", p)
-	}
+	provider := getDNSProviderTry(app, domain.GetString("dns_provider"))
 
 	var eab *acmez.EAB
 	if v := acme.GetString("EAB"); v != "" {
@@ -235,4 +220,24 @@ func (domain *Domain) Magic(app core.App, cache *certmagic.Cache, cfg certmagic.
 	magic.Issuers = []certmagic.Issuer{issuer}
 
 	return magic, nil
+}
+
+func getDNSProviderTry(app core.App, id string) certmagic.DNSProvider {
+	dnsp := try.To1(app.FindRecordById(db.TableDNSP, id))
+	p := dnsp.GetString("provider")
+	var provider certmagic.DNSProvider
+	v := []byte(dnsp.GetString("value"))
+	switch p {
+	case db.DNSPCloudflare:
+		var p cloudflare.Provider
+		try.To(json.Unmarshal(v, &p))
+		provider = &p
+	case db.DNSPAlidns:
+		var p alidns.Provider
+		try.To(json.Unmarshal(v, &p))
+		provider = &p
+	default:
+		err0.Throw(fmt.Errorf("unsupported dns provider: %s", p))
+	}
+	return provider
 }
