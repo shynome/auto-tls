@@ -9,7 +9,7 @@
 # 创建数据存储目录
 mkdir auto-tls
 # 运行服务
-docker run -d --restart always --name auto-tls -p 9443:9443 -v $PWD/auto-tls/:/app/pb_data/ shynome/auto-tls:v0.2.1
+docker run -d --restart always --name auto-tls -p 9443:9443 -v $PWD/auto-tls/:/app/pb_data/ shynome/auto-tls:v0.4.0
 # 创建管理员帐号
 docker exec auto-tls ./auto-tls superuser create admin@tls.local 12345678
 ```
@@ -51,10 +51,13 @@ local.tls-share-test.shynome.com {
 | `AliyunDCDNFullAccess`       | 部署证书到 DCDN |
 | `AliyunCDNFullAccess`        | 部署证书到 CDN  |
 
+# DDNS (v0.4.0+)
+
+新增了一个ddns接口 `/api/collections/ddns/records/:id?token=:token`, 携带token访问ddns记录时会进行ddns的更新, 方便的进行ddns更新
+
 # Todo
 
 一些缺失的功能(我暂时用不上), 其实也是付费需求, 如果你公司(可开票)或个人有需求可向我支付对应的价格以便我进行开发, 邮箱: [shynome@remoon.cn](mailto:shynome@remoon.cn)
-
 
 - [ ] 部署目标的字段加上部署平台的前缀
 - [ ] 更多 dns_providers 的支持 (300 元)
