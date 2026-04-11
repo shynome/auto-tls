@@ -36,6 +36,7 @@ func deploy(app core.App, task *core.Record) (err error) {
 	logger := app.Logger().With("task", task).With("started", time.Now())
 	defer err0.Then(&err, nil, func() {
 		logger.Error("执行部署任务失败", "error", err)
+		notifySuperusers(app, "证书部署失败", "请前往管理后台查看出错原因")
 	})
 	deploy := try.To1(app.FindRecordById(db.TableDeploys, task.GetString("deploy")))
 	switch deploy.GetString("target") {

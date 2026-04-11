@@ -111,6 +111,7 @@ func ManageAsync(app core.App, cfg certmagic.Config) (err error) {
 	logger := app.Logger()
 	defer err0.Then(&err, nil, func() {
 		logger.Error("issue certs failed", "error", err)
+		notifySuperusers(app, "证书申请出错", "请前往管理后台查看出错原因")
 	})
 
 	d30, _ := types.ParseDateTime(time.Now().Add(30 * 24 * time.Hour))
