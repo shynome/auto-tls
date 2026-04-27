@@ -2,17 +2,18 @@ module github.com/shynome/auto-tls
 
 go 1.25.0
 
-replace github.com/libdns/alidns => github.com/shynome/libdns-alidns v0.0.0-20251110072626-bcff4dd7e6e0
-
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.63.107
 	github.com/caddyserver/certmagic v0.25.0
-	github.com/libdns/alidns v1.0.4
+	github.com/libdns/alidns v1.0.7
 	github.com/libdns/cloudflare v0.2.2
+	github.com/libdns/libdns v1.1.1
 	github.com/mholt/acmez/v3 v3.1.3
+	github.com/miekg/dns v1.1.68
 	github.com/pocketbase/dbx v1.11.0
 	github.com/pocketbase/pocketbase v0.31.0
 	github.com/shynome/err0 v0.2.1
+	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.17.0
 )
 
@@ -32,10 +33,8 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/libdns/libdns v1.1.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/miekg/dns v1.1.68 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
@@ -46,7 +45,6 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/zeebo/blake3 v0.2.4 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
 	go.uber.org/zap/exp v0.3.0 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/exp v0.0.0-20251017212417-90e834f514db // indirect
