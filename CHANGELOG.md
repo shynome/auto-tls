@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.5.1] - 2025-04-27
+
+- 修复: alidns 已修复[错误](https://github.com/libdns/alidns/issues/9), 切回官方库
+
 ## [0.5.0] - 2026-04-11
 
 - 添加: 部署任务失败时发送邮件通知
