@@ -66,6 +66,7 @@ func genAliyunDeployTask(app core.App, deploy *core.Record) (err error) {
 	logger := app.Logger().With("deploy", deploy).With("started", time.Now())
 	defer err0.Then(&err, nil, func() {
 		logger.Error("生成部署任务失败", "error", err)
+		notifySuperusers(app, "生成部署任务失败", "请前往管理后台查看出错原因")
 	})
 
 	value := deploy.GetString("value")
